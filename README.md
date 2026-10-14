@@ -1,0 +1,2 @@
+# VisionMeasure-Smart-Object-Measurement-using-OpenCV
+VisionMeasure is a computer vision project that measures the physical dimensions of objects from images or a live webcam feed using Python and OpenCV. The system uses image processing techniques such as grayscale conversion, Gaussian blurring, Canny edge detection, and contour detection to identify object boundaries and calculate their dimensions.
