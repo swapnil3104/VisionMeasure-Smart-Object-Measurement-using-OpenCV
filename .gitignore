@@ -1,0 +1,51 @@
+# Python Bytecode and Caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+
+# Environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Testing, Coverage, and Linting Caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Editor and OS Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+*.bak
+
+# Application Generated Outputs (Keep directory structure via .gitkeep)
+outputs/annotated_images/*
+outputs/measurements/*
+outputs/*.csv
+outputs/*.png
+outputs/*.jpg
+!outputs/annotated_images/.gitkeep
+!outputs/measurements/.gitkeep
+
+# Ensure sample data directories are kept
+!data/calibration_samples/.gitkeep
+!data/sample_images/.gitkeep
+
+# Model Weights (Auto-downloaded by Ultralytics on demand; exceeds GitHub 100MB limit)
+*.pt
+models/*.pt

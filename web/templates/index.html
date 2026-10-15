@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisionMeasure AI — Smart Object Measurement with YOLO & OpenCV</title>
+  <meta name="description" content="AI-Powered Object Detection with Bounding Boxes and Calibrated Physical Dimension Measurements in Real-Time.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📐</text></svg>">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <div class="brand-logo" id="appLogo">VM</div>
+      <div class="brand-info">
+        <h1>
+          VisionMeasure AI
+          <span class="badge-version" id="badgeVersion">YOLOv8m Active</span>
+        </h1>
+        <p class="brand-tagline">Deep Learning Object Detection & Calibrated Dimension Measurement</p>
+      </div>
+    </div>
+
+    <div class="header-status-strip">
+      <div class="status-pill" id="systemStatusPill">
+        <span class="status-indicator"></span>
+        <span id="systemStatusText">YOLOv8m Ready</span>
+      </div>
+      <div class="status-pill scale-pill" id="scaleStatusPill">
+        <span>Scale:</span>
+        <span id="statusScale">38.00 px/cm</span>
+      </div>
+      <a href="/docs" target="_blank" class="btn-header-link" id="linkApiDocs" title="Open FastAPI Interactive Documentation">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+        API Docs
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Application Workspace -->
+  <main class="app-container">
+
+    <!-- Left Control Studio -->
+    <aside class="control-studio">
+
+      <!-- Panel 1: Input Source -->
+      <section class="glass-panel" id="panelInputSource">
+        <h2 class="section-title">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          Input Source
+        </h2>
+
+        <!-- Tab Group -->
+        <div class="tab-group" role="tablist">
+          <button class="tab-btn active" id="tabUpload" role="tab" aria-selected="true">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            Upload
+          </button>
+          <button class="tab-btn" id="tabWebcam" role="tab" aria-selected="false">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            Webcam
+          </button>
+          <button class="tab-btn" id="tabSamples" role="tab" aria-selected="false">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            Samples
+          </button>
+        </div>
+
+        <!-- Upload Container -->
+        <div id="uploadContainer">
+          <input type="file" id="fileInput" accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none;">
+          <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="Drop image or click to browse">
+            <div class="drop-icon">
+              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            </div>
+            <div class="drop-title">Drop your image here</div>
+            <div class="drop-subtitle">or click to browse from device (JPG, PNG)</div>
+          </div>
+        </div>
+
+        <!-- Webcam Container -->
+        <div class="webcam-container" id="webcamContainer">
+          <div class="webcam-feed-wrapper">
+            <video id="webcamVideo" autoplay playsinline muted></video>
+            <div class="webcam-overlay-guide">Target Plane Area</div>
+          </div>
+          <div class="webcam-actions">
+            <button class="btn-secondary" id="btnStartWebcam" style="flex:1;">▶ Start Camera</button>
+            <button class="btn-secondary" id="btnFreezeWebcam" style="flex:1;" disabled>📸 Freeze & Measure</button>
+          </div>
+        </div>
+
+        <!-- Sample Images Container -->
+        <div class="sample-images-container" id="samplesContainer">
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.25rem;">One-click test dataset:</p>
+          <div class="sample-grid" id="sampleGrid">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 2: Detection Settings -->
+      <section class="glass-panel" id="panelDetectionSettings">
+        <h2 class="section-title">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+          Detection Parameters
+        </h2>
+
+        <div class="form-group">
+          <label class="form-label" for="modelSelect">
+            <span>YOLO Model Architecture</span>
+            <span class="val-badge" id="modelAccuracyBadge">50.2 mAP (High)</span>
+          </label>
+          <select class="form-select" id="modelSelect">
+            <option value="yolov8m.pt" data-accuracy="50.2 mAP (High)" data-tier="Medium" selected>YOLOv8 Medium — High Accuracy (Recommended)</option>
+            <option value="yolov8x.pt" data-accuracy="53.9 mAP (Highest)" data-tier="Extra-Large">YOLOv8 Extra-Large — Maximum Precision</option>
+            <option value="yolov8s.pt" data-accuracy="44.9 mAP (Fast)" data-tier="Small">YOLOv8 Small — Fast & Balanced</option>
+            <option value="yolov8n.pt" data-accuracy="37.3 mAP (Lite)" data-tier="Nano">YOLOv8 Nano — Ultra Lightweight</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="detectionMode">
+            <span>Detection Mode</span>
+          </label>
+          <select class="form-select" id="detectionMode">
+            <option value="oriented" selected>YOLO + Oriented BBox (Accurate)</option>
+            <option value="standard">YOLO Standard Bounding Box</option>
+            <option value="contour">OpenCV Canny Edge Contours</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="confSlider">
+            <span>Confidence Threshold</span>
+            <span class="val-badge" id="confValBadge">25%</span>
+          </label>
+          <input type="range" class="range-slider" id="confSlider" min="0.05" max="0.95" step="0.05" value="0.25">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="unitSelect">
+            <span>Measurement Unit</span>
+          </label>
+          <select class="form-select" id="unitSelect">
+            <option value="cm" selected>Centimeters (cm)</option>
+            <option value="mm">Millimeters (mm)</option>
+            <option value="in">Inches (in)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="targetClasses">
+            <span>Filter Objects (COCO)</span>
+          </label>
+          <input type="text" class="form-input" id="targetClasses" placeholder="All classes (or: bottle, cup, phone)">
+        </div>
+      </section>
+
+      <!-- Panel 3: Scale Calibration -->
+      <section class="glass-panel" id="panelCalibration">
+        <h2 class="section-title">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+          Calibration Suite
+        </h2>
+
+        <div class="calibration-status-box">
+          <div class="calib-detail">
+            <span class="calib-title">Active Scale Factor</span>
+            <span class="calib-value" id="calibScaleDisplay">38.00 px/cm</span>
+          </div>
+          <span style="font-size:0.7rem; color:var(--text-muted); text-align:right;">Planar 2D<br>Optical Norm</span>
+        </div>
+
+        <button class="btn-two-point" id="btnTwoPointCalib">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+          Calibrate with 2-Point Ruler
+        </button>
+
+        <p style="font-size:0.7rem; color:var(--text-muted); margin-bottom:0.4rem;">Presets (Apply to reference object):</p>
+        <div class="preset-buttons">
+          <button class="preset-btn" data-length="8.56" data-unit="cm" data-label="Credit Card">💳 Card (8.56cm)</button>
+          <button class="preset-btn" data-length="2.43" data-unit="cm" data-label="Coin">🪙 Coin (2.43cm)</button>
+          <button class="preset-btn" data-length="29.7" data-unit="cm" data-label="A4 Sheet">📄 A4 (29.7cm)</button>
+          <button class="preset-btn" data-length="14.7" data-unit="cm" data-label="Smartphone">📱 Phone (14.7cm)</button>
+          <button class="preset-btn" data-scale="38.0" data-label="Standard Scale">⚙️ Standard (38 px/cm)</button>
+        </div>
+
+        <div class="form-group" style="margin-top:0.6rem;">
+          <label class="form-label" for="manualScaleInput">
+            <span>Direct Scale (px/cm)</span>
+          </label>
+          <div style="display:flex; gap:0.4rem;">
+            <input type="number" step="0.1" class="form-input" id="manualScaleInput" placeholder="e.g. 38.0" value="38.0">
+            <button class="btn-secondary" id="btnApplyManualScale">Set</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel 4: Execution -->
+      <section class="glass-panel" style="padding: 1rem;">
+        <button class="btn-primary-detect" id="btnDetect">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          Detect & Calculate Dimensions
+        </button>
+      </section>
+
+    </aside>
+
+    <!-- Right Display Stage & Analytics Dashboard -->
+    <main class="display-stage">
+
+      <!-- Viewport Card -->
+      <section class="glass-panel" id="panelCanvasViewport">
+        <div class="stage-toolbar">
+          <div class="view-toggle-group">
+            <button class="view-btn active" id="viewAnnotated">YOLO Annotated</button>
+            <button class="view-btn" id="viewOriginal">Clean Image</button>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);" id="resolutionBadge">
+            Interactive Dimension Canvas
+          </div>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="canvas-viewport" id="canvasViewport">
+          <!-- Banner for 2-point calibration instructions -->
+          <div class="canvas-banner" id="canvasBanner">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span id="canvasBannerText">Click 2 points on your reference object</span>
+          </div>
+
+          <!-- Loading Overlay -->
+          <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner"></div>
+            <p style="font-size: 0.9rem; font-weight: 500; color: var(--blue-primary);">Running YOLO Inference & Dimension Measurement...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div class="viewport-empty-state" id="emptyState">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+            <div>
+              <h3 style="font-size:1.1rem; color:var(--text-main); margin-bottom:0.25rem;">No Image Loaded</h3>
+              <p style="font-size:0.8rem; color:var(--text-muted);">Upload a photo, capture from webcam, or pick a sample to view detections.</p>
+            </div>
+          </div>
+
+          <!-- Main Interactive Canvas -->
+          <canvas id="mainImageCanvas" style="display: none;"></canvas>
+        </div>
+      </section>
+
+      <!-- Metrics Cards Grid -->
+      <section class="metrics-summary-grid" id="metricsGrid">
+        <div class="metric-card">
+          <div class="metric-icon cyan">🎯</div>
+          <div class="metric-data">
+            <span class="metric-label">Objects Detected</span>
+            <span class="metric-value" id="metricTotal">0</span>
+            <span class="metric-sub">YOLO Class Detections</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon blue">📏</div>
+          <div class="metric-data">
+            <span class="metric-label">Largest Object</span>
+            <span class="metric-value" id="metricLargest">—</span>
+            <span class="metric-sub" id="metricLargestSub">—</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon emerald">📐</div>
+          <div class="metric-data">
+            <span class="metric-label">Smallest Object</span>
+            <span class="metric-value" id="metricSmallest">—</span>
+            <span class="metric-sub" id="metricSmallestSub">—</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon purple">📊</div>
+          <div class="metric-data">
+            <span class="metric-label">Average Size</span>
+            <span class="metric-value" id="metricAvg">—</span>
+            <span class="metric-sub">Mean Physical Length</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results Table & Export Strip -->
+      <section class="glass-panel" id="panelResultsTable">
+        <div class="results-table-header">
+          <h2 class="section-title" style="margin-bottom:0;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+            Measurement Records
+          </h2>
+          <div class="export-actions">
+            <button class="btn-export" id="btnDownloadImage" title="Download High-Res Annotated Image">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              Image
+            </button>
+            <button class="btn-export" id="btnExportCsv" title="Export CSV spreadsheet">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              CSV
+            </button>
+            <button class="btn-export" id="btnExportJson" title="Export structured JSON">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+              JSON
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="measurements-table" id="measurementsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Object Class</th>
+                <th>Confidence</th>
+                <th>Dimensions (px)</th>
+                <th id="thDimPhysical">Dimensions (cm)</th>
+                <th id="thAreaPhysical">Area (cm²)</th>
+                <th>Rotation</th>
+                <th>Bounding Box [x1,y1,x2,y2]</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="measurementsTbody">
+              <tr>
+                <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                  No objects measured yet. Load an image or start camera to detect objects.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+  </main>
+
+  <!-- Two-Point Calibration Modal -->
+  <div class="modal-backdrop" id="calibModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">Ruler Calibration</h3>
+        <button class="modal-close" id="modalClose" aria-label="Close dialog">&times;</button>
+      </div>
+      <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:1rem;">
+        Enter the known physical length between the two points selected on your reference plane:
+      </p>
+
+      <div class="form-group">
+        <label class="form-label" for="modalPixelDist">Measured Distance (Pixels)</label>
+        <input type="text" class="form-input" id="modalPixelDist" readonly>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="modalKnownLength">Known Real-World Length</label>
+        <input type="number" step="0.01" class="form-input" id="modalKnownLength" value="8.56">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="modalUnitSelect">Unit</label>
+        <select class="form-select" id="modalUnitSelect">
+          <option value="cm" selected>Centimeters (cm)</option>
+          <option value="mm">Millimeters (mm)</option>
+          <option value="in">Inches (in)</option>
+        </select>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem;">
+        <button class="btn-secondary" id="modalCancel">Cancel</button>
+        <button class="btn-primary-detect" id="modalConfirm" style="width:auto; padding:0.5rem 1.25rem;">
+          Apply Calibration
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Object Calibration Modal -->
+  <div class="modal-backdrop" id="objectCalibModal" role="dialog" aria-modal="true" aria-labelledby="objModalTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="objModalTitle">Calibrate Scale from Object</h3>
+        <button class="modal-close" id="objModalClose" aria-label="Close dialog">&times;</button>
+      </div>
+      <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:1rem;" id="objModalSubtitle">
+        Enter the known real-world dimension for this reference object to calibrate all measurements:
+      </p>
+
+      <div class="form-group">
+        <label class="form-label" for="objModalPixelLength">Measured Object Pixel Span</label>
+        <input type="text" class="form-input" id="objModalPixelLength" readonly>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="objModalKnownLength">Known Real-World Length</label>
+        <input type="number" step="0.01" class="form-input" id="objModalKnownLength" value="8.56">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="objModalUnitSelect">Unit</label>
+        <select class="form-select" id="objModalUnitSelect">
+          <option value="cm" selected>Centimeters (cm)</option>
+          <option value="mm">Millimeters (mm)</option>
+          <option value="in">Inches (in)</option>
+        </select>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem;">
+        <button class="btn-secondary" id="objModalCancel">Cancel</button>
+        <button class="btn-primary-detect" id="objModalConfirm" style="width:auto; padding:0.5rem 1.25rem;">
+          Set Scale & Recalculate
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>VisionMeasure AI — Computer Vision & Deep Learning Object Measurement Engine. Real-time Planar Orthogonal Calibration.</p>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# VisionMeasure - Required Dependencies
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+
+# Deep Learning & Web Application
+ultralytics>=8.0.0
+fastapi>=0.100.0
+uvicorn>=0.20.0
+python-multipart>=0.0.6
+jinja2>=3.1.0
+
+# Development and Testing
+pytest>=7.0.0
